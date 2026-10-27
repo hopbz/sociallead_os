@@ -42,7 +42,9 @@ from app.schemas import (
     TelegramSettingsUpdate,
 )
 from app.integrations.telegram import (
+    chat_id_matches_bot_id,
     get_telegram_settings,
+    resolve_latest_telegram_chat_id,
     save_telegram_settings,
     send_telegram_message,
 )
@@ -343,6 +345,27 @@ def update_telegram_settings(
 @router.post('/telegram-settings/test', dependencies=[Depends(verify_token)])
 def test_telegram_settings(settings: Settings = Depends(get_settings), db: Session = Depends(get_db)):
     telegram = get_telegram_settings(settings, db)
+    chat_id = str(telegram['chat_id'])
+    if chat_id_matches_bot_id(settings, chat_id):
+        resolved_chat_id = resolve_latest_telegram_chat_id(settings)
+        if not resolved_chat_id:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    'Telegram chat ID đang trùng với bot ID. Hãy mở bot trên Telegram, bấm Start hoặc gửi /start, '
+                    'sau đó bấm "Gửi thử" lại để hệ thống lấy chat ID thật.'
+                ),
+            )
+        save_telegram_settings(
+            db,
+            enabled=bool(telegram['enabled']),
+            chat_id=resolved_chat_id,
+            persist_env=True,
+        )
+        get_settings.cache_clear()
+        settings = get_settings()
+        telegram = get_telegram_settings(settings, db)
+
     try:
         send_telegram_message(
             settings,

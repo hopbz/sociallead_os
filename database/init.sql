@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS scraped_posts (
     group_name VARCHAR(255),
     post_id VARCHAR(255),
     content_hash VARCHAR(64) NOT NULL,
+    dedupe_key VARCHAR(128) NOT NULL,
     post_url TEXT,
     author VARCHAR(255),
     content TEXT NOT NULL,
@@ -48,12 +49,14 @@ CREATE TABLE IF NOT EXISTS scraped_posts (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     processed_at TIMESTAMPTZ,
     UNIQUE (post_id),
-    UNIQUE (content_hash)
+    UNIQUE (content_hash),
+    UNIQUE (dedupe_key)
 );
 
 CREATE INDEX IF NOT EXISTS idx_scraped_posts_created_at ON scraped_posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_scraped_posts_group_url ON scraped_posts(group_url);
 CREATE INDEX IF NOT EXISTS idx_scraped_posts_content_hash ON scraped_posts(content_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_scraped_posts_dedupe_key ON scraped_posts(dedupe_key);
 CREATE INDEX IF NOT EXISTS idx_scraped_posts_processed_at ON scraped_posts(processed_at);
 
 CREATE TABLE IF NOT EXISTS lead_candidates (

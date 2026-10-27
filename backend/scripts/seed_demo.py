@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
+from app.browser.extractors import build_dedupe_key
 from app.core.hash_utils import content_hash
 from app.db.models import GroupSource, Keyword, LeadCandidate, ScrapedPost
 from app.db.session import SessionLocal, init_db
@@ -97,6 +98,7 @@ if __name__ == "__main__":
                 post = ScrapedPost(
                     **item,
                     content_hash=content_hash(item['group_url'], item['content']),
+                    dedupe_key=build_dedupe_key(item['group_url'], item['post_id'], item['content']),
                     engine='demo',
                     scraped_at=datetime.now(timezone.utc),
                 )

@@ -33,6 +33,7 @@ def add_post(db: Session) -> ScrapedPost:
         group_name='Example Group',
         post_id='facebook-post-1',
         content_hash='hash-1',
+        dedupe_key='post:facebook-post-1',
         post_url='https://www.facebook.com/groups/example/posts/1',
         author='Alice',
         content='I need help choosing a service provider.',

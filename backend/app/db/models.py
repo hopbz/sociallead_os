@@ -78,6 +78,7 @@ class ScrapedPost(Base):
     group_name: Mapped[str | None] = mapped_column(String(255))
     post_id: Mapped[str | None] = mapped_column(String(255), unique=True)
     content_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    dedupe_key: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
     post_url: Mapped[str | None] = mapped_column(Text)
     author: Mapped[str | None] = mapped_column(String(255))
     content: Mapped[str] = mapped_column(Text, nullable=False)

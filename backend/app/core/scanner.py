@@ -68,8 +68,11 @@ class FacebookGroupScanner:
         ).scalars().all()
         return normalize_keywords([row.keyword for row in rows])
 
-    def _exists(self, post_id: str | None, content_hash: str) -> bool:
-        conditions = [ScrapedPost.content_hash == content_hash]
+    def _exists(self, post_id: str | None, content_hash: str, dedupe_key: str) -> bool:
+        conditions = [
+            ScrapedPost.content_hash == content_hash,
+            ScrapedPost.dedupe_key == dedupe_key,
+        ]
         if post_id:
             conditions.append(ScrapedPost.post_id == post_id)
         return self.db.execute(
@@ -167,7 +170,7 @@ class FacebookGroupScanner:
                         if keywords and not matched:
                             continue
                         run.posts_matched += 1
-                        if self._exists(raw.post_id, raw.content_hash):
+                        if self._exists(raw.post_id, raw.content_hash, raw.dedupe_key):
                             continue
                         post = ScrapedPost(
                             run_id=run.id,
@@ -175,6 +178,7 @@ class FacebookGroupScanner:
                             group_name=group_name,
                             post_id=raw.post_id,
                             content_hash=raw.content_hash,
+                            dedupe_key=raw.dedupe_key,
                             post_url=raw.post_url,
                             author=raw.author,
                             content=raw.content,

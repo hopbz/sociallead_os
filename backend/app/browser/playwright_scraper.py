@@ -47,9 +47,19 @@ BLOCKED_OR_NO_ACCESS_SIGNALS = [
     'this content is not available',
     'content unavailable',
     'you can\'t access this group',
-    'join group',
-    'tham gia nhóm',
     'nội dung này hiện không hiển thị',
+]
+
+JOIN_REQUIRED_WITHOUT_POSTS_SIGNALS = [
+    'join this group to view',
+    'join this group to see',
+    'join group to see',
+    'you must join this group',
+    'private group',
+    'tham gia nhóm này để xem',
+    'tham gia nhóm để xem',
+    'nhóm riêng tư',
+    'nhóm kín',
 ]
 
 
@@ -154,6 +164,16 @@ class PlaywrightFacebookGroupScraper:
             return False
         return any(signal in body for signal in BLOCKED_OR_NO_ACCESS_SIGNALS)
 
+    def _page_requires_join_without_posts(self, page) -> bool:
+        try:
+            body = page.locator('body').inner_text(timeout=4000).lower()
+            article_count = page.locator('[role="article"], div[data-pagelet*="FeedUnit"]').count()
+        except Exception:
+            return False
+        if article_count > 0:
+            return False
+        return any(signal in body for signal in JOIN_REQUIRED_WITHOUT_POSTS_SIGNALS)
+
     def _article_cards(self, page):
         for selector in ARTICLE_SELECTORS:
             cards = page.locator(selector)
@@ -209,6 +229,11 @@ class PlaywrightFacebookGroupScraper:
                         page.wait_for_selector(','.join(ARTICLE_SELECTORS), timeout=15000)
                     except PlaywrightTimeoutError:
                         logger.info('No article cards visible yet for %s', group_url)
+                        if not posts and self._page_requires_join_without_posts(page):
+                            raise RuntimeError(
+                                'Group này là private hoặc yêu cầu tham gia. '
+                                'Tài khoản Facebook hiện tại chưa join hoặc chưa được duyệt.'
+                            )
 
                     before_count = len(posts)
                     posts.update(self._extract_visible_posts(page, group_url))

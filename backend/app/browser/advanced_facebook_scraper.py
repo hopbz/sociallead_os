@@ -374,8 +374,13 @@ class AdvancedFacebookScraper:
                         continue
 
                     # Tạo post_id (dùng hàm extract_post_id từ extractors)
-                    from app.browser.extractors import extract_post_id
+                    from app.browser.extractors import build_dedupe_key, canonical_post_id_from_url, extract_post_id
                     post_id = extract_post_id(post_url, group_url, data['content'])
+                    dedupe_key = build_dedupe_key(
+                        group_url,
+                        canonical_post_id_from_url(post_url),
+                        data['content'],
+                    )
                     data['post_id'] = post_id
 
                     # Lọc theo timestamp nếu có
@@ -391,6 +396,7 @@ class AdvancedFacebookScraper:
                             group_url=group_url,
                             post_id=post_id,
                             content_hash=content_hash(group_url, data['content']),
+                            dedupe_key=dedupe_key,
                             post_url=post_url,
                             author=data['author_name'],
                             content=data['content'],

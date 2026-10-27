@@ -24,7 +24,7 @@ TOP_LEVEL_POSTS_JS = r"""
   const feed = document.querySelector('[role="feed"]') || document.body;
 
   const candidates = Array.from(
-    feed.querySelectorAll('[role="article"], div[data-pagelet*="FeedUnit"]')
+    feed.querySelectorAll('div[aria-posinset], [role="article"], div[data-pagelet*="FeedUnit"]')
   );
 
   const results = [];
@@ -36,7 +36,7 @@ TOP_LEVEL_POSTS_JS = r"""
       ? el.parentElement.closest('[role="article"]')
       : null;
 
-    if (parentArticle) continue;
+    if (parentArticle && !el.hasAttribute('aria-posinset')) continue;
 
     const text = (el.innerText || '').trim();
     if (!text || text.length < 20) continue;
@@ -49,7 +49,8 @@ TOP_LEVEL_POSTS_JS = r"""
       hrefs.find(h => h.includes('/posts/')) ||
       hrefs.find(h => h.includes('/permalink/')) ||
       hrefs.find(h => h.includes('story_fbid=')) ||
-      hrefs.find(h => h.includes('/groups/'));
+      hrefs.find(h => h.includes('multi_permalinks=')) ||
+      hrefs.find(h => h.includes('fbid='));
 
     const dedupeKey = postLikeHref || text.slice(0, 160);
     if (seen.has(dedupeKey)) continue;
@@ -71,7 +72,9 @@ TOP_LEVEL_POSTS_JS = r"""
 def normalize_facebook_text(text: str | None) -> str:
     if not text:
         return ""
-    return re.sub(r"\s+", " ", text).strip()
+    clean = re.sub(r"\s+", " ", text).strip()
+    clean = re.sub(r"^(?:Facebook\s+){3,}", "", clean, flags=re.IGNORECASE).strip()
+    return clean
 
 
 def has_comment_url(url: str | None) -> bool:
